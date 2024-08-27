@@ -47,6 +47,12 @@ export class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscrip
   }
 }
 
+export class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
+  constructor(videoPage?: string, message?: string) {
+    super(`Video metadata not found. ${message}`+(videoPage?` (Video page: ${videoPage})`:``));
+  }
+}
+
 export interface TranscriptConfig {
   lang?: string;
   langs?: string[];
@@ -57,20 +63,41 @@ export interface TranscriptResponse {
   offset: number;
   lang?: string;
 }
+export interface IVideoMetadata{
+  creator?: string;
+  creatorUsername?: string;
+  title?: string;
+  description?: string;
+  length?: number;
+  uploadDate?: Date;
+  postUrl?: string;
+  postId?: string;
+  videoUrl?: string;
+  fullUrl?: string;
+  thumbnailUrl?: string;
+  isAd?: boolean;
+  crosspost?: boolean;
+}
 
 /**
  * Class to retrieve transcript if exist
  */
 export class YoutubeTranscript {
-  /**
+  
+    /**
    * Fetch transcript from YTB Video
    * @param videoId Video url or video identifier
    * @param config Get transcript in a specific language ISOs, ordered by preference
    */
+  public static async fetchTranscript( //legacy overload
+    videoId:string,
+    config?: TranscriptConfig
+  ): Promise<TranscriptResponse[]>;
   public static async fetchTranscript(
     videoId: string,
-    config?: TranscriptConfig
-  ): Promise<TranscriptResponse[]> {
+    config?: TranscriptConfig,
+    includeMetadata?: boolean
+  ): Promise<TranscriptResponse[] | {transcriptResponseArray: TranscriptResponse[], videoMetadata: IVideoMetadata}> {
     const identifier = this.retrieveVideoId(videoId);
     
     // Merge config.lang and config.langs
@@ -153,12 +180,18 @@ export class YoutubeTranscript {
     }
     const transcriptBody = await transcriptResponse.text();
     const results = [...transcriptBody.matchAll(RE_XML_TRANSCRIPT)];
-    return results.map((result) => ({
+    const finalResults = results.map((result) => ({
       text: result[3],
       duration: parseFloat(result[2]),
       offset: parseFloat(result[1]),
       lang: transcriptLanguage,
     }));
+
+    if (includeMetadata) {
+      const metaData: IVideoMetadata = YoutubeTranscript.getVideoMetaData(videoPageBody);
+      return {transcriptResponseArray: finalResults, videoMetadata: metaData }
+    }
+    return finalResults as TranscriptResponse[];
   }
 
   /**
@@ -176,5 +209,38 @@ export class YoutubeTranscript {
     throw new YoutubeTranscriptError(
       'Impossible to retrieve Youtube video ID.'
     );
+  }
+
+  private static getVideoMetaData(videoPageBody: string): IVideoMetadata {
+    let startSplit, jsonString, jsonObject;
+    try{
+      startSplit = videoPageBody.split('var ytInitialPlayerResponse = ')[1];
+      jsonString = startSplit.split(';</script>')[0];
+      jsonObject = JSON.parse(jsonString);
+    }catch(e){
+      throw new YoutubeVideoMetadataNotFoundError(videoPageBody);
+    }
+    if(jsonObject.videoDetails){
+      const videoDetails = jsonObject.videoDetails;
+      const res: IVideoMetadata = {}
+      res.creator = videoDetails.author;
+      res.creatorUsername = videoDetails.channelId;
+      res.title = videoDetails.title;
+      res.description = videoDetails.shortDescription;
+      res.length = Number(videoDetails.lengthSeconds)*1000; //length is storedin ms
+      if(jsonObject.microformat && jsonObject.microformat.playerMicroformatRenderer){
+        const microformat = jsonObject.microformat.playerMicroformatRenderer;
+        res.uploadDate = new Date(microformat.uploadDate);
+      }
+      res.postUrl = `https://www.youtube.com/watch?v=${videoDetails.videoId}`;
+      res.postId = videoDetails.videoId;
+      res.videoUrl = undefined; //TODO:
+      res.fullUrl = undefined;
+      res.thumbnailUrl = videoDetails.thumbnail.thumbnails[0].url;//the smallest thumbnail
+      res.isAd = false; //TODO: figure out how to find out if it is an ad
+      res.crosspost = false //NA in youtube
+      return res;
+    }
+    throw new YoutubeVideoMetadataNotFoundError(videoPageBody, 'parsed but didnt find the video details');
   }
 }

@@ -14,7 +14,10 @@ export declare class YoutubeTranscriptNotAvailableError extends YoutubeTranscrip
     constructor(videoId: string);
 }
 export declare class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError {
-    constructor(langs: string | string[], availableLangs: string[], videoId: string);
+    constructor(langs: string[], availableLangs: string[], videoId: string);
+}
+export declare class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
+    constructor(videoPage?: string, message?: string);
 }
 export interface TranscriptConfig {
     lang?: string;
@@ -26,19 +29,36 @@ export interface TranscriptResponse {
     offset: number;
     lang?: string;
 }
+export interface IVideoMetadata {
+    creator?: string;
+    creatorUsername?: string;
+    title?: string;
+    description?: string;
+    length?: number;
+    uploadDate?: Date;
+    postUrl?: string;
+    postId?: string;
+    videoUrl?: string;
+    fullUrl?: string;
+    thumbnailUrl?: string;
+    isAd?: boolean;
+    crosspost?: boolean;
+}
 /**
  * Class to retrieve transcript if exist
  */
 export declare class YoutubeTranscript {
     /**
-     * Fetch transcript from YTB Video
-     * @param videoId Video url or video identifier
-     * @param config Get transcript in a specific language ISOs, ordered by preference
-     */
-    static fetchTranscript(videoId: string, config?: TranscriptConfig): Promise<TranscriptResponse[]>;
+   * Fetch transcript from YTB Video
+   * @param videoId Video url or video identifier
+   * @param config Get transcript in a specific language ISOs, ordered by preference
+   */
+    static fetchTranscript(//legacy overload
+    videoId: string, config?: TranscriptConfig): Promise<TranscriptResponse[]>;
     /**
      * Retrieve video id from url or string
      * @param videoId video url or video id
      */
     private static retrieveVideoId;
+    private static getVideoMetaData;
 }

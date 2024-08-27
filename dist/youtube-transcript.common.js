@@ -51,20 +51,19 @@ class YoutubeTranscriptNotAvailableError extends YoutubeTranscriptError {
 }
 class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError {
     constructor(langs, availableLangs, videoId) {
-        const langsStr = Array.isArray(langs) ? langs.join(', ') : langs;
-        super(`No transcripts are available in ${langsStr} for this video (${videoId}). Available languages: ${availableLangs.join(', ')}`);
+        super(`No transcripts are available in ${langs.join(', ')} for this video (${videoId}). Available languages: ${availableLangs.join(', ')}`);
+    }
+}
+class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
+    constructor(videoPage, message) {
+        super(`Video metadata not found. ${message}` + (videoPage ? ` (Video page: ${videoPage})` : ``));
     }
 }
 /**
  * Class to retrieve transcript if exist
  */
 class YoutubeTranscript {
-    /**
-     * Fetch transcript from YTB Video
-     * @param videoId Video url or video identifier
-     * @param config Get transcript in a specific language ISOs, ordered by preference
-     */
-    static fetchTranscript(videoId, config) {
+    static fetchTranscript(videoId, config, includeMetadata) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const identifier = this.retrieveVideoId(videoId);
@@ -101,7 +100,6 @@ class YoutubeTranscript {
             }
             // Check for available languages based on config
             let availableLanguages = configLangs.filter((lang) => captions.captionTracks.some((track) => track.languageCode === lang));
-            console.log(captions.captionTracks.map((track) => track.languageCode));
             if (configLangs.length && !availableLanguages.length) {
                 throw new YoutubeTranscriptNotAvailableLanguageError(configLangs, captions.captionTracks.map((track) => track.languageCode), videoId);
             }
@@ -110,19 +108,24 @@ class YoutubeTranscript {
                 ? captions.captionTracks.find((track) => track.languageCode === transcriptLanguage)
                 : captions.captionTracks[0]).baseUrl;
             const transcriptResponse = yield fetch(transcriptURL, {
-                headers: Object.assign(Object.assign({}, (((config === null || config === void 0 ? void 0 : config.langs) || (config === null || config === void 0 ? void 0 : config.lang)) && { 'Accept-Language': transcriptLanguage })), { 'User-Agent': USER_AGENT }),
+                headers: Object.assign(Object.assign({}, (transcriptLanguage && { 'Accept-Language': transcriptLanguage })), { 'User-Agent': USER_AGENT }),
             });
             if (!transcriptResponse.ok) {
                 throw new YoutubeTranscriptNotAvailableError(videoId);
             }
             const transcriptBody = yield transcriptResponse.text();
             const results = [...transcriptBody.matchAll(RE_XML_TRANSCRIPT)];
-            return results.map((result) => ({
+            const finalResults = results.map((result) => ({
                 text: result[3],
                 duration: parseFloat(result[2]),
                 offset: parseFloat(result[1]),
                 lang: transcriptLanguage,
             }));
+            if (includeMetadata) {
+                const metaData = YoutubeTranscript.getVideoMetaData(videoPageBody);
+                return { transcriptResponseArray: finalResults, videoMetadata: metaData };
+            }
+            return finalResults;
         });
     }
     /**
@@ -139,4 +142,37 @@ class YoutubeTranscript {
         }
         throw new YoutubeTranscriptError('Impossible to retrieve Youtube video ID.');
     }
-}exports.YoutubeTranscript=YoutubeTranscript;exports.YoutubeTranscriptDisabledError=YoutubeTranscriptDisabledError;exports.YoutubeTranscriptError=YoutubeTranscriptError;exports.YoutubeTranscriptNotAvailableError=YoutubeTranscriptNotAvailableError;exports.YoutubeTranscriptNotAvailableLanguageError=YoutubeTranscriptNotAvailableLanguageError;exports.YoutubeTranscriptTooManyRequestError=YoutubeTranscriptTooManyRequestError;exports.YoutubeTranscriptVideoUnavailableError=YoutubeTranscriptVideoUnavailableError;
+    static getVideoMetaData(videoPageBody) {
+        let startSplit, jsonString, jsonObject;
+        try {
+            startSplit = videoPageBody.split('var ytInitialPlayerResponse = ')[1];
+            jsonString = startSplit.split(';</script>')[0];
+            jsonObject = JSON.parse(jsonString);
+        }
+        catch (e) {
+            throw new YoutubeVideoMetadataNotFoundError(videoPageBody);
+        }
+        if (jsonObject.videoDetails) {
+            const videoDetails = jsonObject.videoDetails;
+            const res = {};
+            res.creator = videoDetails.author;
+            res.creatorUsername = videoDetails.channelId;
+            res.title = videoDetails.title;
+            res.description = videoDetails.shortDescription;
+            res.length = Number(videoDetails.lengthSeconds) * 1000; //length is storedin ms
+            if (jsonObject.microformat && jsonObject.microformat.playerMicroformatRenderer) {
+                const microformat = jsonObject.microformat.playerMicroformatRenderer;
+                res.uploadDate = new Date(microformat.uploadDate);
+            }
+            res.postUrl = `https://www.youtube.com/watch?v=${videoDetails.videoId}`;
+            res.postId = videoDetails.videoId;
+            res.videoUrl = undefined; //TODO:
+            res.fullUrl = undefined;
+            res.thumbnailUrl = videoDetails.thumbnail.thumbnails[0].url; //the smallest thumbnail
+            res.isAd = false; //TODO: figure out how to find out if it is an ad
+            res.crosspost = false; //NA in youtube
+            return res;
+        }
+        throw new YoutubeVideoMetadataNotFoundError(videoPageBody, 'parsed but didnt find the video details');
+    }
+}exports.YoutubeTranscript=YoutubeTranscript;exports.YoutubeTranscriptDisabledError=YoutubeTranscriptDisabledError;exports.YoutubeTranscriptError=YoutubeTranscriptError;exports.YoutubeTranscriptNotAvailableError=YoutubeTranscriptNotAvailableError;exports.YoutubeTranscriptNotAvailableLanguageError=YoutubeTranscriptNotAvailableLanguageError;exports.YoutubeTranscriptTooManyRequestError=YoutubeTranscriptTooManyRequestError;exports.YoutubeTranscriptVideoUnavailableError=YoutubeTranscriptVideoUnavailableError;exports.YoutubeVideoMetadataNotFoundError=YoutubeVideoMetadataNotFoundError;
