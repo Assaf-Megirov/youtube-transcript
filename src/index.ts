@@ -63,7 +63,7 @@ export interface TranscriptResponse {
   offset: number;
   lang?: string;
 }
-export interface IVideoMetadata{
+export interface IYoutubeVideoMetadata{
   creator?: string;
   creatorUsername?: string;
   title?: string;
@@ -93,11 +93,18 @@ export class YoutubeTranscript {
     videoId:string,
     config?: TranscriptConfig
   ): Promise<TranscriptResponse[]>;
+  /**
+   * 
+   * @param videoId 
+   * @param config 
+   * @param includeMetadata 
+   * @returns {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}
+   */
   public static async fetchTranscript(
     videoId: string,
     config?: TranscriptConfig,
     includeMetadata?: boolean
-  ): Promise<TranscriptResponse[] | {transcriptResponseArray: TranscriptResponse[], videoMetadata: IVideoMetadata}> {
+  ): Promise<TranscriptResponse[] | {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}> {
     const identifier = this.retrieveVideoId(videoId);
     
     // Merge config.lang and config.langs
@@ -188,7 +195,7 @@ export class YoutubeTranscript {
     }));
 
     if (includeMetadata) {
-      const metaData: IVideoMetadata = YoutubeTranscript.getVideoMetaData(videoPageBody);
+      const metaData: IYoutubeVideoMetadata = YoutubeTranscript.getVideoMetaData(videoPageBody);
       return {transcriptResponseArray: finalResults, videoMetadata: metaData }
     }
     return finalResults as TranscriptResponse[];
@@ -211,7 +218,7 @@ export class YoutubeTranscript {
     );
   }
 
-  private static getVideoMetaData(videoPageBody: string): IVideoMetadata {
+  private static getVideoMetaData(videoPageBody: string): IYoutubeVideoMetadata {
     let startSplit, jsonString, jsonObject;
     try{
       startSplit = videoPageBody.split('var ytInitialPlayerResponse = ')[1];
@@ -222,7 +229,7 @@ export class YoutubeTranscript {
     }
     if(jsonObject.videoDetails){
       const videoDetails = jsonObject.videoDetails;
-      const res: IVideoMetadata = {}
+      const res: IYoutubeVideoMetadata = {}
       res.creator = videoDetails.author;
       res.creatorUsername = videoDetails.channelId;
       res.title = videoDetails.title;

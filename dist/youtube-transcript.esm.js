@@ -65,6 +65,13 @@ class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
  * Class to retrieve transcript if exist
  */
 class YoutubeTranscript {
+    /**
+     *
+     * @param videoId
+     * @param config
+     * @param includeMetadata
+     * @returns {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}
+     */
     static fetchTranscript(videoId, config, includeMetadata) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {

@@ -29,7 +29,7 @@ export interface TranscriptResponse {
     offset: number;
     lang?: string;
 }
-export interface IVideoMetadata {
+export interface IYoutubeVideoMetadata {
     creator?: string;
     creatorUsername?: string;
     title?: string;
