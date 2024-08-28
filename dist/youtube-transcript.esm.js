@@ -159,7 +159,7 @@ class YoutubeTranscript {
             jsonObject = JSON.parse(jsonString);
         }
         catch (e) {
-            throw new YoutubeVideoMetadataNotFoundError(videoPageBody);
+            throw new YoutubeVideoMetadataNotFoundError(jsonString);
         }
         if (jsonObject.videoDetails) {
             const videoDetails = jsonObject.videoDetails;
@@ -182,7 +182,7 @@ class YoutubeTranscript {
             res.crosspost = false; //NA in youtube
             return res;
         }
-        throw new YoutubeVideoMetadataNotFoundError(videoPageBody, 'parsed but didnt find the video details');
+        throw new YoutubeVideoMetadataNotFoundError(jsonString, 'parsed but didnt find the video details');
     }
 }
 
