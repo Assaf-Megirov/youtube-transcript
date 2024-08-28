@@ -65,6 +65,8 @@ class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError 
 }
 class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
     constructor(videoPage, message) {
+        if (videoPage.length > 8000)
+            videoPage = videoPage.slice(0, 4000) + '...<object too long>' + videoPage.slice(-4000);
         super(`Video metadata not found. ${message}` + (videoPage ? ` (Video page: ${videoPage})` : ``));
     }
 }
@@ -156,10 +158,18 @@ class YoutubeTranscript {
         try {
             startSplit = videoPageBody.split('var ytInitialPlayerResponse = ')[1];
             jsonString = startSplit.split(';</script>')[0];
+        }
+        catch (e) {
+            let lastObj = jsonString ? jsonString : startSplit;
+            if (!lastObj)
+                lastObj = videoPageBody;
+            throw new YoutubeVideoMetadataNotFoundError(lastObj, 'Couldnt split html by: "var ytInitialPlayerResponse = " or ";</script>"' + e.message);
+        }
+        try {
             jsonObject = JSON.parse(jsonString);
         }
         catch (e) {
-            throw new YoutubeVideoMetadataNotFoundError(jsonString);
+            throw new YoutubeVideoMetadataNotFoundError(jsonString, 'Couldnt parse json, ' + e.message);
         }
         if (jsonObject.videoDetails) {
             const videoDetails = jsonObject.videoDetails;
