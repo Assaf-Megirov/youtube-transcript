@@ -165,6 +165,10 @@ class YoutubeTranscript {
                 lastObj = videoPageBody;
             throw new YoutubeVideoMetadataNotFoundError(lastObj, 'Couldnt split html by: "var ytInitialPlayerResponse = " or ";</script>"' + e.message);
         }
+        //trim all the characters from the end of jsonString that are not '}'
+        while (jsonString && jsonString[jsonString.length - 1] !== '}') {
+            jsonString = jsonString.slice(0, -1);
+        }
         try {
             jsonObject = JSON.parse(jsonString);
         }
