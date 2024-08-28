@@ -22,3 +22,6 @@ yarn-error.log*
 .editorconfig
 /storybook-static
 .npmrc
+
+#manual testing
+manual-testing
