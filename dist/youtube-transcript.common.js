@@ -151,6 +151,12 @@ class YoutubeTranscript {
         }
         throw new YoutubeTranscriptError('Impossible to retrieve Youtube video ID.');
     }
+    /**
+   * Fetches metadata for a YouTube video. Use this function if you want only the video's metadata without the transcript.
+   *
+   * @param {string} videoId - The ID of the YouTube video.
+   * @return {Promise<IYoutubeVideoMetadata>} A promise that resolves with the video's metadata. hint: import { IYoutubeVideoMetadata } from 'youtube-transcript';
+   */
     static fetchMetadata(videoId) {
         return __awaiter(this, void 0, void 0, function* () {
             const identifier = this.retrieveVideoId(videoId);
@@ -169,6 +175,12 @@ class YoutubeTranscript {
             return YoutubeTranscript.getVideoMetaData(videoPageBody);
         });
     }
+    /**
+     * Extracts metadata from a YouTube video page as text.
+     *
+     * @param {string} videoPageBody - The response from the youtube video page as text. ex: response = await fetch(); videoPageBody = await response.text();
+     * @return {IYoutubeVideoMetadata} The extracted metadata.
+     */
     static getVideoMetaData(videoPageBody) {
         let startSplit, jsonString, jsonObject;
         try {
