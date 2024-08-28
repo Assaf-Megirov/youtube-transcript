@@ -151,6 +151,24 @@ class YoutubeTranscript {
         }
         throw new YoutubeTranscriptError('Impossible to retrieve Youtube video ID.');
     }
+    static fetchMetadata(videoId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const identifier = this.retrieveVideoId(videoId);
+            const videoPageResponse = yield fetch(`https://www.youtube.com/watch?v=${identifier}`, {
+                headers: {
+                    'User-Agent': USER_AGENT
+                },
+            });
+            const videoPageBody = yield videoPageResponse.text();
+            if (videoPageBody.includes('class="g-recaptcha"')) {
+                throw new YoutubeTranscriptTooManyRequestError();
+            }
+            if (!videoPageBody.includes('"playabilityStatus":')) {
+                throw new YoutubeTranscriptVideoUnavailableError(videoId);
+            }
+            return YoutubeTranscript.getVideoMetaData(videoPageBody);
+        });
+    }
     static getVideoMetaData(videoPageBody) {
         let startSplit, jsonString, jsonObject;
         try {

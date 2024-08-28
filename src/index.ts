@@ -224,6 +224,26 @@ export class YoutubeTranscript {
     );
   }
 
+  public static async fetchMetadata(videoId: string): Promise<IYoutubeVideoMetadata> {
+    const identifier = this.retrieveVideoId(videoId);
+    const videoPageResponse = await fetch(
+      `https://www.youtube.com/watch?v=${identifier}`,
+      {
+        headers: {
+          'User-Agent': USER_AGENT
+        },
+      }
+    );
+    const videoPageBody = await videoPageResponse.text();
+    if (videoPageBody.includes('class="g-recaptcha"')) {
+      throw new YoutubeTranscriptTooManyRequestError();
+    }
+    if (!videoPageBody.includes('"playabilityStatus":')) {
+      throw new YoutubeTranscriptVideoUnavailableError(videoId);
+    }
+    return YoutubeTranscript.getVideoMetaData(videoPageBody);
+  }
+
   private static getVideoMetaData(videoPageBody: string): IYoutubeVideoMetadata {
     let startSplit, jsonString, jsonObject;
     try {

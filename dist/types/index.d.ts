@@ -72,5 +72,6 @@ export declare class YoutubeTranscript {
      * @param videoId video url or video id
      */
     private static retrieveVideoId;
+    static fetchMetadata(videoId: string): Promise<IYoutubeVideoMetadata>;
     private static getVideoMetaData;
 }
