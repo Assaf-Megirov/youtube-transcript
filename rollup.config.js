@@ -1,8 +1,15 @@
-import typescript from 'rollup-plugin-typescript2';
+const typescript = require('@rollup/plugin-typescript');
+const dts = require('rollup-plugin-dts').default;
 
 const baseConfig = {
   input: 'src/index.ts',
-  plugins: [typescript()],
+  plugins: [
+    typescript({
+      tsconfig: './tsconfig.json',
+      declaration: true,
+      declarationDir: './dist/types'
+    })
+  ],
   external: ['phin'],
 };
 
@@ -18,8 +25,8 @@ const esConfig = {
 };
 buildFormats.push(esConfig);
 
-// Module build
-const umdConfig = {
+// CommonJS build
+const cjsConfig = {
   ...baseConfig,
   output: {
     compact: true,
@@ -29,7 +36,16 @@ const umdConfig = {
     exports: 'named',
   },
 };
-buildFormats.push(umdConfig);
+buildFormats.push(cjsConfig);
 
-// Export config
-export default buildFormats;
+// Declaration file bundle
+const dtsConfig = {
+  input: './dist/types/index.d.ts',
+  output: [{ file: 'dist/index.d.ts', format: 'es' }],
+  plugins: [dts({
+
+  })]
+};
+buildFormats.push(dtsConfig);
+
+module.exports = buildFormats;

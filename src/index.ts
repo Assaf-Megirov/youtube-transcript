@@ -49,7 +49,7 @@ export class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscrip
 
 export class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
   constructor(videoPage?: string, message?: string) {
-    super(`Video metadata not found. ${message}`+(videoPage?` (Video page: ${videoPage})`:``));
+    super(`Video metadata not found. ${message}` + (videoPage ? ` (Video page: ${videoPage})` : ``));
   }
 }
 
@@ -63,7 +63,7 @@ export interface TranscriptResponse {
   offset: number;
   lang?: string;
 }
-export interface IYoutubeVideoMetadata{
+export interface IYoutubeVideoMetadata {
   creator?: string;
   creatorUsername?: string;
   title?: string;
@@ -83,14 +83,14 @@ export interface IYoutubeVideoMetadata{
  * Class to retrieve transcript if exist
  */
 export class YoutubeTranscript {
-  
-    /**
+
+  /**
    * Fetch transcript from YTB Video
    * @param videoId Video url or video identifier
    * @param config Get transcript in a specific language ISOs, ordered by preference
    */
   public static async fetchTranscript( //legacy overload
-    videoId:string,
+    videoId: string,
     config?: TranscriptConfig
   ): Promise<TranscriptResponse[]>;
   /**
@@ -100,13 +100,18 @@ export class YoutubeTranscript {
    * @param includeMetadata 
    * @returns {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}
    */
+  public static async fetchTranscript( //legacy overload
+    videoId: string,
+    config?: TranscriptConfig,
+    includeMetadata?: boolean
+  ): Promise<{ transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata }>;
   public static async fetchTranscript(
     videoId: string,
     config?: TranscriptConfig,
     includeMetadata?: boolean
-  ): Promise<TranscriptResponse[] | {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}> {
+  ): Promise<TranscriptResponse[] | { transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata }> {
     const identifier = this.retrieveVideoId(videoId);
-    
+
     // Merge config.lang and config.langs
     const configLangs = [...(config?.lang ? [config.lang] : []), ...(config?.langs ?? [])];
     const preferredLang = configLangs?.[0];
@@ -152,11 +157,11 @@ export class YoutubeTranscript {
       throw new YoutubeTranscriptNotAvailableError(videoId);
     }
 
-    
+
     // Check for available languages based on config
     let availableLanguages: string[] = configLangs.filter(
-        (lang) => captions.captionTracks.some((track) => track.languageCode === lang)
-      );
+      (lang) => captions.captionTracks.some((track) => track.languageCode === lang)
+    );
 
     if (configLangs.length && !availableLanguages.length) {
       throw new YoutubeTranscriptNotAvailableLanguageError(
@@ -196,7 +201,7 @@ export class YoutubeTranscript {
 
     if (includeMetadata) {
       const metaData: IYoutubeVideoMetadata = YoutubeTranscript.getVideoMetaData(videoPageBody);
-      return {transcriptResponseArray: finalResults, videoMetadata: metaData }
+      return { transcriptResponseArray: finalResults, videoMetadata: metaData }
     }
     return finalResults as TranscriptResponse[];
   }
@@ -220,22 +225,22 @@ export class YoutubeTranscript {
 
   private static getVideoMetaData(videoPageBody: string): IYoutubeVideoMetadata {
     let startSplit, jsonString, jsonObject;
-    try{
+    try {
       startSplit = videoPageBody.split('var ytInitialPlayerResponse = ')[1];
       jsonString = startSplit.split(';</script>')[0];
       jsonObject = JSON.parse(jsonString);
-    }catch(e){
+    } catch (e) {
       throw new YoutubeVideoMetadataNotFoundError(videoPageBody);
     }
-    if(jsonObject.videoDetails){
+    if (jsonObject.videoDetails) {
       const videoDetails = jsonObject.videoDetails;
       const res: IYoutubeVideoMetadata = {}
       res.creator = videoDetails.author;
       res.creatorUsername = videoDetails.channelId;
       res.title = videoDetails.title;
       res.description = videoDetails.shortDescription;
-      res.length = Number(videoDetails.lengthSeconds)*1000; //length is storedin ms
-      if(jsonObject.microformat && jsonObject.microformat.playerMicroformatRenderer){
+      res.length = Number(videoDetails.lengthSeconds) * 1000; //length is storedin ms
+      if (jsonObject.microformat && jsonObject.microformat.playerMicroformatRenderer) {
         const microformat = jsonObject.microformat.playerMicroformatRenderer;
         res.uploadDate = new Date(microformat.uploadDate);
       }

@@ -1,35 +1,35 @@
-export declare class YoutubeTranscriptError extends Error {
+declare class YoutubeTranscriptError extends Error {
     constructor(message: any);
 }
-export declare class YoutubeTranscriptTooManyRequestError extends YoutubeTranscriptError {
+declare class YoutubeTranscriptTooManyRequestError extends YoutubeTranscriptError {
     constructor();
 }
-export declare class YoutubeTranscriptVideoUnavailableError extends YoutubeTranscriptError {
+declare class YoutubeTranscriptVideoUnavailableError extends YoutubeTranscriptError {
     constructor(videoId: string);
 }
-export declare class YoutubeTranscriptDisabledError extends YoutubeTranscriptError {
+declare class YoutubeTranscriptDisabledError extends YoutubeTranscriptError {
     constructor(videoId: string);
 }
-export declare class YoutubeTranscriptNotAvailableError extends YoutubeTranscriptError {
+declare class YoutubeTranscriptNotAvailableError extends YoutubeTranscriptError {
     constructor(videoId: string);
 }
-export declare class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError {
+declare class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError {
     constructor(langs: string[], availableLangs: string[], videoId: string);
 }
-export declare class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
+declare class YoutubeVideoMetadataNotFoundError extends YoutubeTranscriptError {
     constructor(videoPage?: string, message?: string);
 }
-export interface TranscriptConfig {
+interface TranscriptConfig {
     lang?: string;
     langs?: string[];
 }
-export interface TranscriptResponse {
+interface TranscriptResponse {
     text: string;
     duration: number;
     offset: number;
     lang?: string;
 }
-export interface IYoutubeVideoMetadata {
+interface IYoutubeVideoMetadata {
     creator?: string;
     creatorUsername?: string;
     title?: string;
@@ -47,14 +47,26 @@ export interface IYoutubeVideoMetadata {
 /**
  * Class to retrieve transcript if exist
  */
-export declare class YoutubeTranscript {
+declare class YoutubeTranscript {
     /**
-   * Fetch transcript from YTB Video
-   * @param videoId Video url or video identifier
-   * @param config Get transcript in a specific language ISOs, ordered by preference
-   */
+     * Fetch transcript from YTB Video
+     * @param videoId Video url or video identifier
+     * @param config Get transcript in a specific language ISOs, ordered by preference
+     */
     static fetchTranscript(//legacy overload
     videoId: string, config?: TranscriptConfig): Promise<TranscriptResponse[]>;
+    /**
+     *
+     * @param videoId
+     * @param config
+     * @param includeMetadata
+     * @returns {transcriptResponseArray: TranscriptResponse[], videoMetadata: IYoutubeVideoMetadata}
+     */
+    static fetchTranscript(//legacy overload
+    videoId: string, config?: TranscriptConfig, includeMetadata?: boolean): Promise<{
+        transcriptResponseArray: TranscriptResponse[];
+        videoMetadata: IYoutubeVideoMetadata;
+    }>;
     /**
      * Retrieve video id from url or string
      * @param videoId video url or video id
@@ -62,3 +74,5 @@ export declare class YoutubeTranscript {
     private static retrieveVideoId;
     private static getVideoMetaData;
 }
+
+export { type IYoutubeVideoMetadata, type TranscriptConfig, type TranscriptResponse, YoutubeTranscript, YoutubeTranscriptDisabledError, YoutubeTranscriptError, YoutubeTranscriptNotAvailableError, YoutubeTranscriptNotAvailableLanguageError, YoutubeTranscriptTooManyRequestError, YoutubeTranscriptVideoUnavailableError, YoutubeVideoMetadataNotFoundError };
